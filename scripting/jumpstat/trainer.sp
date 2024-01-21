@@ -1,4 +1,8 @@
 #define TRAINER_FULLUPDATE_TICK_INTERVAL 13
+#define TRAINER_SIZE 17 // needs to be odd (even numbers of spaces around middle)
+#define TRAINER_MIN_GAIN 0.3 // is also max, 0.3 means trainer range is 0.3 - 1.7
+#define TRAINER_GOAL_SYNC_MIN 0.8
+#define TRAINER_GOAL_SYNC_MAX 1.2
 
 static float g_fTrainerPercentsNumber[MAXPLAYERS + 1];
 static float g_fLastAverageNumber[MAXPLAYERS + 1];
@@ -8,6 +12,15 @@ static float g_fTrainerPercentsBarMedium[MAXPLAYERS + 1];
 static float g_fTrainerPercentsBarFast[MAXPLAYERS + 1];
 
 static int g_iCmdNum[MAXPLAYERS + 1];
+
+// why isnt this native, also idk where to put it
+stock float FloatMod(float num, float denom) {
+	return num - denom * RoundToFloor(num / denom);
+}
+
+stock float operator%(float oper1, float oper2) {
+	return FloatMod(oper1, oper2);
+}
 
 public void Trainer_Tick(int client, float speed, bool inbhop, float gain, float jss)
 {
@@ -139,8 +152,9 @@ void PushTrainerToClients(int client, float speeds[3], int cmdnum)
 //message, number and average are different. number is on top, average is the | in the middle. they update at different rates
 void Trainer_GetTrainerString(int client, char message[256], float number, float average)
 {
-	char sVisualisation[32];
+	char sVisualisation[56]; // todo: proper value here so it doesnt overflow ((TRAINER_SIZE + 1) * 2) or smth
 	Trainer_VisualisationString(sVisualisation, sizeof(sVisualisation), average);
+	
 	if(g_fCacheHudPositions[client][Trainer][X_DIM] == -1.0)
 	{
 		Format(message, sizeof(message), "%i\n", RoundFloat(number * 100));
@@ -149,30 +163,74 @@ void Trainer_GetTrainerString(int client, char message[256], float number, float
 	{
 		Format(message, sizeof(message), "              %i\n", RoundFloat(number * 100));
 	}
-	Format(message, sizeof(message), "%s══════^══════\n", message);
-	Format(message, sizeof(message), "%s %s \n", message, sVisualisation);
-	Format(message, sizeof(message), "%s══════^══════", message);
+
+	int center = GetTrainerIndex(1.0, TRAINER_SIZE);
+	int minGoodIndex = GetTrainerIndex(TRAINER_GOAL_SYNC_MIN, TRAINER_SIZE);
+	int maxGoodIndex = GetTrainerIndex(TRAINER_GOAL_SYNC_MAX, TRAINER_SIZE);
+
+	for (int i = 0; i < TRAINER_SIZE; i++)
+	{
+		if (i != center) {
+			if (i == minGoodIndex)
+				Format(message, sizeof(message), "%s<", message);
+			else if (i == maxGoodIndex)
+				Format(message, sizeof(message), "%s>", message);
+			else
+				Format(message, sizeof(message), "%s_", message);
+		}
+		else
+			Format(message, sizeof(message), "%s⌄", message);
+	}
+	Format(message, sizeof(message), "%s\n", message);
+
+	Format(message, sizeof(message), "%s%s\n", message, sVisualisation);
 }
 
-void Trainer_VisualisationString(char[] buffer, int maxlength, float percentage)
-{
-	if (0.5 <= percentage <= 1.5)
-	{
-		int Spaces = RoundFloat((percentage - 0.5) / 0.05);
-		for (int i = 0; i <= Spaces + 1; i++)
-		{
-			FormatEx(buffer, maxlength, "%s ", buffer);
-		}
+float ClampPos(float pos, int maxIndex) {
+	float maxPos = float(maxIndex);
 
-		FormatEx(buffer, maxlength, "%s|", buffer);
+	if (pos < 0.0) pos = 0.0;
+	if (pos >= maxPos) pos = maxPos;
 
-		for (int i = 0; i <= (21 - Spaces); i++)
-		{
-			FormatEx(buffer, maxlength, "%s ", buffer);
+	return pos;
+}
+
+float GetTrainerPos(float percentage, int size) {
+	int maxIndex = size - 1;
+
+	float minPercent = TRAINER_MIN_GAIN;
+	float maxPercent = 1.0 + (1.0 - TRAINER_MIN_GAIN);
+
+	percentage = (percentage - minPercent) / (maxPercent - minPercent);
+
+	return ClampPos(percentage * maxIndex, maxIndex);
+}
+
+int GetTrainerIndex(float percentage, int size) {
+	float pos = GetTrainerPos(percentage, size);
+	return RoundFloat(pos);
+}
+
+int GetTrainerPreciseIndex(float percentage, int size, float& remainder) {
+	float pos = GetTrainerPos(percentage, size);
+	remainder = pos % 1.0;
+	return RoundToFloor(pos);
+}
+
+void Trainer_VisualisationString(char[] buffer, int bufferSize, float percentage) {
+	int size = TRAINER_SIZE * 2; // mult to match up the unicode/spaces with the underscores - (changes depending on ui font, should be 1 if monospace)
+
+	float remainder;
+	int index = GetTrainerPreciseIndex(percentage, size, remainder);
+
+	for (int i = 0; i < size; i++) {
+		if (i != index) {
+			FormatEx(buffer, bufferSize, "%s ", buffer);
+		} else {
+			if (remainder >= 0.5)
+				FormatEx(buffer, bufferSize, "%s⎹", buffer);
+			else
+				FormatEx(buffer, bufferSize, "%s⎸", buffer);
 		}
-	}
-	else
-	{
-		Format(buffer, maxlength, "%s", percentage < 1.0 ? "|                   " : "                    |");
 	}
 }
