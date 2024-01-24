@@ -1,6 +1,6 @@
 static float g_fLastJumpTime[MAXPLAYERS + 1];
 
-public void Ssj_Process(int client, int jump, int speed, int strafecount, float heightdelta, float gain, float sync,
+public void Ssj_Process(int client, int jump, int speed, int strafecount, float heightdelta, float jumpheight, float gain, float sync,
 float eff, float yawwing, float jss)
 {
 
@@ -18,13 +18,13 @@ float eff, float yawwing, float jss)
 		}
 		if((i == client && IsPlayerAlive(i)) || (!IsPlayerAlive(i) && BgsGetHUDTarget(i) == client))
 		{
-			SSJ_WriteMessage(i, client, jump, speed, strafecount, heightdelta, gain, sync, eff, jss);
+			SSJ_WriteMessage(i, client, jump, speed, strafecount, heightdelta, jumpheight, gain, sync, eff, jss);
 		}
 	}
 	g_fLastJumpTime[client] = time;
 }
 
-void SSJ_WriteMessage(int client, int target, int jump, int speed, int strafecount, float heightdelta, float gain, float sync,
+void SSJ_WriteMessage(int client, int target, int jump, int speed, int strafecount, float heightdelta, float jumpheight, float gain, float sync,
  float eff, float jss)
 {
 	if(jump != 1)
@@ -121,6 +121,11 @@ void SSJ_WriteMessage(int client, int target, int jump, int speed, int strafecou
 		if(g_iSettings[client][Bools] & SSJ_HEIGHTDIFF)
 		{
 			Format(message, sizeof(message), "%s %s| HΔ: %s%.1f", message, g_csChatStrings.sText, g_csChatStrings.sVariable, heightdelta);
+		}
+
+		if(g_iSettings[client][Bools] & SSJ_JUMPHEIGHT)
+		{
+			Format(message, sizeof(message), "%s %s| H: %s%.1f", message, g_csChatStrings.sText, g_csChatStrings.sVariable, jumpheight);
 		}
 
 		if(g_iSettings[client][Bools] & SSJ_SHAVIT_TIME && BgsShavitLoaded())

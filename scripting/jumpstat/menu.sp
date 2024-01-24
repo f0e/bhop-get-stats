@@ -205,6 +205,7 @@ void ShowSSJMenu(int client, int pos = 0)
 	AddMenuItem(menu, "enEff", (g_iSettings[client][Bools] & SSJ_EFFICIENCY) ? "[x] Efficiency":"[ ] Efficiency");
 	AddMenuItem(menu, "enOffset", (g_iSettings[client][Bools] & SSJ_OFFSETS) ? "[x] Offsets":"[ ] Offsets");
 	AddMenuItem(menu, "enHeight", (g_iSettings[client][Bools] & SSJ_HEIGHTDIFF) ? "[x] Height Difference":"[ ] Height Difference");
+	AddMenuItem(menu, "enJumpHeight", (g_iSettings[client][Bools] & SSJ_JUMPHEIGHT) ? "[x] Jump Height":"[ ] Jump Height");
 
 	if(BgsShavitLoaded())
 	{
@@ -524,6 +525,10 @@ public int Ssj_Select(Menu menu, MenuAction action, int client, int option)
 		else if(StrEqual(info, "enHeight"))
 		{
 			g_iSettings[client][Bools] ^= SSJ_HEIGHTDIFF;
+		}
+		else if(StrEqual(info, "enJumpHeight"))
+		{
+			g_iSettings[client][Bools] ^= SSJ_JUMPHEIGHT;
 		}
 		else if(StrEqual(info, "enOffset"))
 		{

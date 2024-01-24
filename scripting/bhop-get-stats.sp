@@ -56,6 +56,7 @@ float g_fLastVel[MAXPLAYERS + 1][3];
 float g_fLastJumpPosition[MAXPLAYERS + 1][3];
 float g_fLastVeer[MAXPLAYERS + 1];
 float g_fTickJss[MAXPLAYERS + 1];
+float g_fJumpPeak[MAXPLAYERS + 1];
 float g_fTickrate = 0.01;
 
 GlobalForward JumpStatsForward;
@@ -70,8 +71,8 @@ public void OnPluginStart()
 	g_bShavit = LibraryExists("shavit");
 
 	JumpStatsForward = new GlobalForward("BhopStat_JumpForward", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Float,
-	 																Param_Float, Param_Float, Param_Float, Param_Float, Param_Float);
-	//int client, int jump, int speed, int heightdelta, int strafecount, float gain, float sync, float eff, float yawwing
+	 																Param_Float, Param_Float, Param_Float, Param_Float, Param_Float, Param_Float);
+	//int client, int jump, int speed, float heightdelta, float jumpheight, int strafecount, float gain, float sync, float eff, float yawwing
 	//yawing not done
 	//add airpath, veer, jumpoff angle on j1
 
@@ -120,6 +121,7 @@ public void OnClientPutInServer(int client)
 	g_iSyncedTick[client] = 0;
 	g_fRawGain[client] = 0.0;
 	g_fOldHeight[client] = 0.0;
+	g_fJumpPeak[client] = 0.0;
 	g_fTrajectory[client] = 0.0;
 	g_fTraveledDistance[client] = NULL_VECTOR;
 	g_iTicksOnGround[client] = 0;
@@ -239,6 +241,12 @@ void Bgs_ProcessPostRunCmd(int client, int buttons, const float vel[3], const fl
 
 	if(g_iTicksOnGround[client] == 0)
 	{
+		float origin[3];
+		GetClientAbsOrigin(client, origin);
+		if (origin[2] > g_fJumpPeak[client]) {
+			g_fJumpPeak[client] = origin[2];
+		}
+
 		g_fTickJss[client] = 0.0;
 		if(g_fYawDifference[client] != 0.0)
 		{
@@ -405,6 +413,7 @@ void Bgs_ProcessPostRunCmd(int client, int buttons, const float vel[3], const fl
 		g_iSyncedTick[client] = 0;
 		g_iStrafeCount[client] = 0;
 		g_fOldHeight[client] = origin[2];
+		g_fJumpPeak[client] = origin[2];
 		g_fTrajectory[client] = 0.0;
 		g_fTraveledDistance[client] = NULL_VECTOR;
 		g_fAvgDiffFromPerf[client] = 0.0;
@@ -471,6 +480,7 @@ void StartJumpForward(int client)
 		Call_PushCell(speed);
 		Call_PushCell(g_iStrafeCount[client]);
 		Call_PushFloat(origin[2] - g_fOldHeight[client]);
+		Call_PushFloat(g_fJumpPeak[client] - g_fOldHeight[client]);
 		Call_PushFloat(coeffsum);
 		Call_PushFloat(100.0 * g_iSyncedTick[client] / g_iStrafeTick[client]);
 		Call_PushFloat(efficiency);

@@ -91,10 +91,10 @@ public void BhopStat_TickForward(int client, int buttons, float vel[3], float an
 	ShowKeys_Tick(client, buttons, yawDiff);
 }
 
-public void BhopStat_JumpForward(int client, int jump, int speed, int strafecount, float heightdelta, float gain, float sync, float eff, float yawwing, float jss)
+public void BhopStat_JumpForward(int client, int jump, int speed, int strafecount, float heightdelta, float jumpheight, float gain, float sync, float eff, float yawwing, float jss)
 {
 	Jhud_Process(client, jump, speed, strafecount, heightdelta, gain, sync, eff, yawwing, jss);
-	Ssj_Process(client, jump, speed, strafecount, heightdelta, gain, sync, eff, yawwing, jss);
+	Ssj_Process(client, jump, speed, strafecount, heightdelta, jumpheight, gain, sync, eff, yawwing, jss);
 	Fjt_OnJump(client, jump);
 	Offset_Dump(client, jump, sync);
 }
